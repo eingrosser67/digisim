@@ -3,38 +3,35 @@
 
 /**
  * Konstruktor des NotGate
- * Der Name wird an die Basisklasse Component weitergegeben
+ * Initialisiert die Pins (genau 1 Eingang)
  */
-NotGate::NotGate(std::string n) : Component(n) {
-    std::cout << "[" << name << "] NOT-Gatter aktiviert" << std::endl;
+NotGate::NotGate(std::string n) : Gate(n) {
+    m_inputs.resize(1);  // NOT-Gatter hat exakt 1 Eingangs-Pin
+    std::cout << "[" << m_name << "] NOT-Gatter aktiviert (1 Pin)" << std::endl;
 }
 
 /**
- * Setzt Eingang B - aber NOT hat nur einen Eingang!
- * Diese Überschreibung (Override) gibt eine Warnung aus
- */
-void NotGate::setInputB(int /* val */) {
-    std::cout << "[" << name << " WARNUNG] NOT-Gatter hat keinen Eingang B!" << std::endl;
-    std::cout << "           Nutzen Sie setInputA() für den einzigen Eingang." << std::endl;
-}
-
-/**
- * Berechnet die NOT-Logik:
- * output = NOT inA
+ * Berechnet die NOT-Logik über Smart Pointers (Pull-Prinzip)
  * 
- * Die Methode speichert das Ergebnis und gibt es zurück.
+ * Floating Pin Check: Ist das Kabel eingesteckt?
  */
-bool NotGate::evaluate() {
-    output = !inA;
-    return output;
+void NotGate::evaluate() {
+    if (m_inputs[0]) {
+        bool val = m_inputs[0]->getOutput();
+        m_output = !val;
+    } else {
+        std::cerr << "[WARNUNG] " << m_name << ": NOT-Gatter hat unverbundenen Pin (Floating)!" << std::endl;
+        m_output = false;
+    }
 }
 
 /**
  * Gibt den Zustand dieses NOT-Gatters aus
  */
 void NotGate::printState() const {
-    std::cout << "NotGate [" << name << ": Input=" << (inA ? 1 : 0) 
-              << "] => Output=" << (output ? 1 : 0) << std::endl;
+    std::string pin = (m_inputs[0]) ? "verbunden" : "FLOATING";
+    std::cout << "NotGate [" << m_name << ": Input=" << pin 
+              << "] => Output=" << (m_output ? 1 : 0) << std::endl;
 }
 
 

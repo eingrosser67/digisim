@@ -7,237 +7,150 @@
 #include "NotGate.h"
 #include "XorGate.h"
 #include "NandGate.h"
-#include "LogicEngine.h"
+#include "Switch.h"
 
 /**
  * =====================================================================
- * Labor 7: Automatisierte Tests mit Exit-Codes für CI/CD
+ * Labor 7: Schaltkreisaufbau mit Smart Pointers (DAG-Architektur)
  * =====================================================================
  * 
- * Diese Wahrheitstabellen-Tests verifizieren alle Gatter-Implementierungen.
- * Bei Fehler: Exit-Code 1 (FEHLER für die CI-Pipeline)
- * Bei Erfolg: Exit-Code 0 (GRÜNER HAKEN)
+ * Diese Demonstration zeigt:
+ * 1. Den Aufbau eines echten digitalen Schaltkreises
+ * 2. Die Verbindung von Gattern über Smart Pointers (Kupferkabel)
+ * 3. Die Simulation eines Halbaddierers (Half Adder)
+ * 4. Das "Pull-Prinzip" für Werteabfrage
+ * 
+ * Ein Halbaddierer:
+ * - Nimmt zwei Ein-Bit-Eingänge (A, B)
+ * - Produziert zwei Ausgänge: Summe (S) und Carry (C)
+ * - S = A XOR B
+ * - C = A AND B
  */
-
-// Hilfsfunktion: Testet ein Gatter mit gegebener Eingabe und erwartetem Output
-bool testGate(Component* gate, bool inputA, bool inputB, bool expectedOutput, 
-              const std::string& gateName) {
-    gate->setInputA(inputA);
-    gate->setInputB(inputB);
-    gate->evaluate();  // ← KRITISCH: Berechne die Logik!
-    bool actualOutput = gate->getOutput();
-    
-    bool testPassed = (actualOutput == expectedOutput);
-    
-    std::cout << "  " << gateName << ": A=" << inputA << " B=" << inputB 
-              << " => " << actualOutput;
-    if (testPassed) {
-        std::cout << " ✓";
-    } else {
-        std::cout << " ✗ (erwartet: " << expectedOutput << ")";
-    }
-    std::cout << std::endl;
-    
-    return testPassed;
-}
-
-// Hilfsfunktion: Testet ein Gatter mit 1-Eingang (NOT-Gatter)
-bool testGateNOT(Component* gate, bool input, bool expectedOutput, 
-                 const std::string& gateName) {
-    gate->setInputA(input);
-    gate->setInputB(false);  // NOT-Gatter ignoriert InputB
-    gate->evaluate();  // ← KRITISCH: Berechne die Logik!
-    bool actualOutput = gate->getOutput();
-    
-    bool testPassed = (actualOutput == expectedOutput);
-    
-    std::cout << "  " << gateName << ": A=" << input 
-              << " => " << actualOutput;
-    if (testPassed) {
-        std::cout << " ✓";
-    } else {
-        std::cout << " ✗ (erwartet: " << expectedOutput << ")";
-    }
-    std::cout << std::endl;
-    
-    return testPassed;
-}
 
 int main() {
     std::cout << "========================================" << std::endl;
-    std::cout << "C++ Digital Simulator - Automated Tests" << std::endl;
-    std::cout << "Labor 7: GitHub Actions CI/CD Pipeline" << std::endl;
+    std::cout << "  C++ Digital Simulator - Labor 7" << std::endl;
+    std::cout << "  Halbaddierer (Half Adder) Schaltkreis" << std::endl;
     std::cout << "========================================\n" << std::endl;
 
-    bool allTestsPassed = true;
+    // =====================================================================
+    // Phase 4: Halbaddierer montieren
+    // =====================================================================
+    
+    std::cout << "[SCHRITT 1] Komponenten instanziieren (als Smart Pointers)...\n" << std::endl;
+    
+    // Datenquellen (Schalter)
+    auto swA = std::make_shared<Switch>("Input A");
+    auto swB = std::make_shared<Switch>("Input B");
+    
+    // Logikgatter
+    auto xorGate = std::make_shared<XorGate>("XOR (Summe)");
+    auto andGate = std::make_shared<AndGate>("AND (Carry)");
+    
+    std::cout << "\n[SCHRITT 2] Schaltkreis verkabeln (DAG-Aufbau)...\n" << std::endl;
+    
+    // Verkabelung (Fan-Out!): Beide Schalter gehen an beide Gatter
+    // ┌─────────────┐
+    // │  Input A ──┬──> XOR
+    // └─────────────┤
+    //              └──> AND
+    //
+    // ┌─────────────┐
+    // │  Input B ──┬──> XOR
+    // └─────────────┤
+    //              └──> AND
+    
+    xorGate->connectInput(0, swA);    // XOR Pin 0 = Input A
+    xorGate->connectInput(1, swB);    // XOR Pin 1 = Input B
+    
+    andGate->connectInput(0, swA);    // AND Pin 0 = Input A
+    andGate->connectInput(1, swB);    // AND Pin 1 = Input B
+    
+    std::cout << "\n[SCHRITT 3] Wahrheitstabelle: Alle 4 Kombinationen testen...\n" << std::endl;
+    std::cout << "┌─────┬─────┬────────┬───────┐" << std::endl;
+    std::cout << "│  A  │  B  │ Summe  │ Carry │" << std::endl;
+    std::cout << "├─────┼─────┼────────┼───────┤" << std::endl;
+    
+    // Test-Kombinationen: 0+0, 0+1, 1+0, 1+1
+    std::vector<std::pair<bool, bool>> testCases = {
+        {false, false},
+        {false, true},
+        {true, false},
+        {true, true}
+    };
+    
     int testCount = 0;
     int passedCount = 0;
-
-    // =====================================================================
-    // TEST 1: AND-Gate (Wahrheitstabelle)
-    // =====================================================================
-    std::cout << "[TEST 1] AND-Gate Wahrheitstabelle:" << std::endl;
-    {
-        auto andGate = std::make_unique<AndGate>("TEST-AND");
+    
+    for (auto [a, b] : testCases) {
+        // KRITISCH: Erst Schalter setzen, DANN evaluate() aufrufen!
+        swA->setState(a);
+        swB->setState(b);
         
-        std::vector<std::tuple<bool, bool, bool>> testCases = {
-            {false, false, false},  // 0 & 0 = 0
-            {false, true, false},   // 0 & 1 = 0
-            {true, false, false},   // 1 & 0 = 0
-            {true, true, true}      // 1 & 1 = 1
-        };
+        // Evaluiere die Gatter (Pull-Prinzip: Sie holen sich Werte selbst)
+        xorGate->evaluate();
+        andGate->evaluate();
         
-        for (auto& [a, b, expected] : testCases) {
-            testCount++;
-            if (testGate(andGate.get(), a, b, expected, "AND")) {
-                passedCount++;
-            } else {
-                allTestsPassed = false;
-            }
-        }
-    }
-    std::cout << std::endl;
-
-    // =====================================================================
-    // TEST 2: OR-Gate (Wahrheitstabelle)
-    // =====================================================================
-    std::cout << "[TEST 2] OR-Gate Wahrheitstabelle:" << std::endl;
-    {
-        auto orGate = std::make_unique<OrGate>("TEST-OR");
+        // Lese die Ergebnisse aus
+        bool summe = xorGate->getOutput();
+        bool carry = andGate->getOutput();
         
-        std::vector<std::tuple<bool, bool, bool>> testCases = {
-            {false, false, false},  // 0 | 0 = 0
-            {false, true, true},    // 0 | 1 = 1
-            {true, false, true},    // 1 | 0 = 1
-            {true, true, true}      // 1 | 1 = 1
-        };
+        // Berechne erwartete Werte
+        bool expectedSum = a ^ b;        // XOR
+        bool expectedCarry = a && b;     // AND
         
-        for (auto& [a, b, expected] : testCases) {
-            testCount++;
-            if (testGate(orGate.get(), a, b, expected, "OR")) {
-                passedCount++;
-            } else {
-                allTestsPassed = false;
-            }
-        }
-    }
-    std::cout << std::endl;
-
-    // =====================================================================
-    // TEST 3: NOT-Gate (Wahrheitstabelle)
-    // =====================================================================
-    std::cout << "[TEST 3] NOT-Gate Wahrheitstabelle:" << std::endl;
-    {
-        auto notGate = std::make_unique<NotGate>("TEST-NOT");
+        // Ausgabe der Testzelle
+        std::cout << "│  " << (a ? 1 : 0) << "  │  " << (b ? 1 : 0) << "  │";
+        std::cout << "   " << (summe ? 1 : 0) << "    │";
+        std::cout << "   " << (carry ? 1 : 0) << "   │";
         
-        std::vector<std::tuple<bool, bool>> testCases = {
-            {false, true},   // NOT 0 = 1
-            {true, false}    // NOT 1 = 0
-        };
-        
-        for (auto& [input, expected] : testCases) {
-            testCount++;
-            if (testGateNOT(notGate.get(), input, expected, "NOT")) {
-                passedCount++;
-            } else {
-                allTestsPassed = false;
-            }
-        }
-    }
-    std::cout << std::endl;
-
-    // =====================================================================
-    // TEST 4: XOR-Gate (Wahrheitstabelle)
-    // =====================================================================
-    std::cout << "[TEST 4] XOR-Gate Wahrheitstabelle:" << std::endl;
-    {
-        auto xorGate = std::make_unique<XorGate>("TEST-XOR");
-        
-        std::vector<std::tuple<bool, bool, bool>> testCases = {
-            {false, false, false},  // 0 XOR 0 = 0
-            {false, true, true},    // 0 XOR 1 = 1
-            {true, false, true},    // 1 XOR 0 = 1
-            {true, true, false}     // 1 XOR 1 = 0
-        };
-        
-        for (auto& [a, b, expected] : testCases) {
-            testCount++;
-            if (testGate(xorGate.get(), a, b, expected, "XOR")) {
-                passedCount++;
-            } else {
-                allTestsPassed = false;
-            }
-        }
-    }
-    std::cout << std::endl;
-
-    // =====================================================================
-    // TEST 5: NAND-Gate (Wahrheitstabelle)
-    // =====================================================================
-    std::cout << "[TEST 5] NAND-Gate Wahrheitstabelle:" << std::endl;
-    {
-        auto nandGate = std::make_unique<NandGate>("TEST-NAND");
-        
-        std::vector<std::tuple<bool, bool, bool>> testCases = {
-            {false, false, true},   // NAND(0,0) = 1
-            {false, true, true},    // NAND(0,1) = 1
-            {true, false, true},    // NAND(1,0) = 1
-            {true, true, false}     // NAND(1,1) = 0
-        };
-        
-        for (auto& [a, b, expected] : testCases) {
-            testCount++;
-            if (testGate(nandGate.get(), a, b, expected, "NAND")) {
-                passedCount++;
-            } else {
-                allTestsPassed = false;
-            }
-        }
-    }
-    std::cout << std::endl;
-
-    // =====================================================================
-    // TEST 6: LogicEngine-Integration
-    // =====================================================================
-    std::cout << "[TEST 6] LogicEngine-Integration:" << std::endl;
-    {
-        LogicEngine engine;
-        engine.setCircuitName("Integrations-Test");
-        
-        auto g1 = std::make_unique<AndGate>("AND-1");
-        g1->setInputA(true);
-        g1->setInputB(true);
-        
-        engine.addComponent(std::move(g1));
-        
-        std::cout << "  Engine enthält " << engine.getComponentCount() << " Komponente(n)" << std::endl;
-        
-        testCount++;
-        if (engine.getComponentCount() == 1) {
-            std::cout << "  Integration erfolgreich ✓" << std::endl;
+        // Überprüfe Korrektheit
+        testCount += 2;
+        if (summe == expectedSum) {
+            std::cout << " ✓";
             passedCount++;
         } else {
-            std::cout << "  Integration fehlgeschlagen ✗" << std::endl;
-            allTestsPassed = false;
+            std::cout << " ✗";
+        }
+        std::cout << " ";
+        if (carry == expectedCarry) {
+            std::cout << "✓ " << std::endl;
+            passedCount++;
+        } else {
+            std::cout << "✗ " << std::endl;
         }
     }
-    std::cout << std::endl;
-
+    
+    std::cout << "└─────┴─────┴────────┴───────┘" << std::endl;
+    
+    std::cout << "\n[SCHRITT 4] Zustandsbericht der Komponenten:\n" << std::endl;
+    
+    swA->printState();
+    swB->printState();
+    xorGate->printState();
+    andGate->printState();
+    
     // =====================================================================
     // Abschluss und Exit-Code
     // =====================================================================
-    std::cout << "========================================" << std::endl;
+    std::cout << "\n========================================" << std::endl;
     std::cout << "Test Summary:" << std::endl;
     std::cout << "Bestanden: " << passedCount << " / " << testCount << std::endl;
     std::cout << "========================================" << std::endl;
 
-    if (!allTestsPassed) {
+    if (passedCount == testCount) {
+        std::cout << "\n[SUCCESS] Halbaddierer funktioniert korrekt! ✓" << std::endl;
+        std::cout << "Der DAG wurde erfolgreich aufgebaut und evaluiert." << std::endl;
+        return 0;  // ← EXIT-CODE 0: ERFOLG (Grüner Haken für CI)
+    } else {
         std::cerr << "\n[FEHLER] Mindestens ein Test fehlgeschlagen!" << std::endl;
-        std::cerr << "Die CI-Pipeline wird dies als FEHLER markieren." << std::endl;
         return 1;  // ← EXIT-CODE 1: FEHLER (Rotes Kreuz für CI)
     }
-
-    std::cout << "\n[SUCCESS] Alle Tests bestanden! ✓" << std::endl;
-    std::cout << "Die CI-Pipeline wird dies als ERFOLG markieren." << std::endl;
-    return 0;  // ← EXIT-CODE 0: ERFOLG (Grüner Haken für CI)
 }
+
+
+
+
+
+
+

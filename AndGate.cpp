@@ -3,28 +3,39 @@
 
 /**
  * Konstruktor des AndGate
- * Der Name wird an die Basisklasse Component weitergegeben
+ * Initialisiert die Pins (genau 2 Eingänge) und ruft Basiskonstruktor auf
  */
-AndGate::AndGate(std::string n) : Component(n) {
-    std::cout << "[" << name << "] AND-Gatter aktiviert" << std::endl;
+AndGate::AndGate(std::string n) : Gate(n) {
+    m_inputs.resize(2);  // AND-Gatter hat exakt 2 Eingangs-Pins
+    std::cout << "[" << m_name << "] AND-Gatter aktiviert (2 Pins)" << std::endl;
 }
 
 /**
- * Berechnet die AND-Logik:
- * output = inA AND inB (beide müssen true sein)
+ * Berechnet die AND-Logik über Smart Pointers (Pull-Prinzip)
  * 
- * Die Methode speichert das Ergebnis und gibt es zurück.
+ * Floating Pin Check: Sind beide Kabel eingesteckt?
+ * - Wenn ja: hole die Werte von den Quell-Gattern ab
+ * - Wenn nein: Warnung + Fallback auf false (sicherer Zustand)
  */
-bool AndGate::evaluate() {
-    output = inA && inB;
-    return output;
+void AndGate::evaluate() {
+    // Floating Pin Check: Sind beide Kabel eingesteckt?
+    if (m_inputs[0] && m_inputs[1]) {
+        bool valA = m_inputs[0]->getOutput();
+        bool valB = m_inputs[1]->getOutput();
+        m_output = valA && valB;
+    } else {
+        std::cerr << "[WARNUNG] " << m_name << ": AND-Gatter hat unverbundene Pins (Floating)!" << std::endl;
+        m_output = false;  // Fallback-Zustand
+    }
 }
 
 /**
  * Gibt den Zustand dieses AND-Gatters aus
  */
 void AndGate::printState() const {
-    std::cout << "AndGate [" << name << ": A=" << (inA ? 1 : 0) 
-              << ", B=" << (inB ? 1 : 0) 
-              << "] => Output=" << (output ? 1 : 0) << std::endl;
+    std::string pinA = (m_inputs[0]) ? "verbunden" : "FLOATING";
+    std::string pinB = (m_inputs[1]) ? "verbunden" : "FLOATING";
+    std::cout << "AndGate [" << m_name << ": A=" << pinA 
+              << ", B=" << pinB 
+              << "] => Output=" << (m_output ? 1 : 0) << std::endl;
 }

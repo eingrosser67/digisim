@@ -1,7 +1,0 @@
-      - name: Installiere cppcheck Statische Analyse
-        run: sudo apt-get update && sudo apt-get install -y cppcheck
-
-      - name: Code-Qualität prüfen mit cppcheck
-        # --error-exitcode=1 sorgt dafür, dass die Pipeline bei Fehlern stoppt
-        run: cppcheck --enable=all --error-exitcode=1 *.cpp
-        continue-on-error: true # Verhindert, dass das Labor abbricht, falls Stilfehler existieren

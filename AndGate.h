@@ -3,27 +3,27 @@
 #include "Component.h"
 
 /**
- * AND-Gatter Klasse (erbt von Component)
+ * AND-Gatter Klasse (erbt von Gate)
  * Ausgabe ist 1, nur wenn beide Eingänge 1 sind
  * 
- * Durch die Vererbung erhalten wir automatisch:
- * - Attribute: name, inA, inB, output (protected)
- * - Methoden: setInputA(), setInputB(), getOutput()
+ * Merkmale (Labor 7):
+ * - Hat genau 2 Eingangs-Pins
+ * - Zieht sich Werte über m_inputs[] (Pull-Prinzip)
+ * - Prüft auf nullptr (Floating-Pin-Check)
  */
-class AndGate : public Component {
+class AndGate : public Gate {
 public:
     /**
-     * Konstruktor: Nimmt einen Namen entgegen und leitet ihn an die Basisklasse weiter
+     * Konstruktor: Nimmt einen Namen entgegen
      * @param n Der Name dieses AND-Gatters
      */
     AndGate(std::string n);
 
     /**
-     * Berechnet das Ausgangssignal (AND-Logik: beide Eingänge müssen 1 sein)
+     * Berechnet das Ausgangssignal (AND-Logik über Smart Pointers)
      * Das Keyword 'final' verhindert, dass Subklassen diese Methode überschreiben
-     * @return true wenn beide Eingänge 1 sind, sonst false
      */
-    bool evaluate() override final;
+    void evaluate() override final;
 
     /**
      * Gibt den aktuellen Zustand des Gatters aus

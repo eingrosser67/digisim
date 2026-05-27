@@ -3,28 +3,36 @@
 
 /**
  * Konstruktor des OrGate
- * Der Name wird an die Basisklasse Component weitergegeben
+ * Initialisiert die Pins (genau 2 Eingänge)
  */
-OrGate::OrGate(std::string n) : Component(n) {
-    std::cout << "[" << name << "] OR-Gatter aktiviert" << std::endl;
+OrGate::OrGate(std::string n) : Gate(n) {
+    m_inputs.resize(2);  // OR-Gatter hat exakt 2 Eingangs-Pins
+    std::cout << "[" << m_name << "] OR-Gatter aktiviert (2 Pins)" << std::endl;
 }
 
 /**
- * Berechnet die OR-Logik:
- * output = inA OR inB (mindestens einer muss true sein)
+ * Berechnet die OR-Logik über Smart Pointers (Pull-Prinzip)
  * 
- * Die Methode speichert das Ergebnis und gibt es zurück.
+ * Floating Pin Check: Sind beide Kabel eingesteckt?
  */
-bool OrGate::evaluate() {
-    output = inA || inB;
-    return output;
+void OrGate::evaluate() {
+    if (m_inputs[0] && m_inputs[1]) {
+        bool valA = m_inputs[0]->getOutput();
+        bool valB = m_inputs[1]->getOutput();
+        m_output = valA || valB;
+    } else {
+        std::cerr << "[WARNUNG] " << m_name << ": OR-Gatter hat unverbundene Pins (Floating)!" << std::endl;
+        m_output = false;
+    }
 }
 
 /**
  * Gibt den Zustand dieses OR-Gatters aus
  */
 void OrGate::printState() const {
-    std::cout << "OrGate [" << name << ": A=" << (inA ? 1 : 0) 
-              << ", B=" << (inB ? 1 : 0) 
-              << "] => Output=" << (output ? 1 : 0) << std::endl;
+    std::string pinA = (m_inputs[0]) ? "verbunden" : "FLOATING";
+    std::string pinB = (m_inputs[1]) ? "verbunden" : "FLOATING";
+    std::cout << "OrGate [" << m_name << ": A=" << pinA 
+              << ", B=" << pinB 
+              << "] => Output=" << (m_output ? 1 : 0) << std::endl;
 }
