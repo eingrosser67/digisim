@@ -24,6 +24,7 @@ bool testGate(Component* gate, bool inputA, bool inputB, bool expectedOutput,
               const std::string& gateName) {
     gate->setInputA(inputA);
     gate->setInputB(inputB);
+    gate->evaluate();  // ← KRITISCH: Berechne die Logik!
     bool actualOutput = gate->getOutput();
     
     bool testPassed = (actualOutput == expectedOutput);
@@ -45,6 +46,7 @@ bool testGateNOT(Component* gate, bool input, bool expectedOutput,
                  const std::string& gateName) {
     gate->setInputA(input);
     gate->setInputB(false);  // NOT-Gatter ignoriert InputB
+    gate->evaluate();  // ← KRITISCH: Berechne die Logik!
     bool actualOutput = gate->getOutput();
     
     bool testPassed = (actualOutput == expectedOutput);
