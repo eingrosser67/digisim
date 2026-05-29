@@ -3,14 +3,15 @@
 #include "Component.h"
 
 /**
- * NOT-Gatter Klasse (erbt von Component)
+ * NOT-Gatter Klasse (erbt von Gate)
  * Ausgabe ist invertiert - WICHTIG: NOT hat nur einen Eingang!
  * 
- * Durch die Vererbung bekommen wir inA, inB und output, aber:
- * - Wir nutzen nur inA als echten Eingang
- * - setInputB() ist überschrieben, um eine Warnung auszugeben
+ * Merkmale (Labor 7):
+ * - Hat genau 1 Eingangs-Pin (m_inputs.size() == 1)
+ * - Zieht sich Werte über m_inputs[0] (Pull-Prinzip)
+ * - Prüft auf nullptr (Floating-Pin-Check)
  */
-class NotGate : public Component {
+class NotGate : public Gate {
 public:
     /**
      * Konstruktor: Nimmt einen Namen entgegen
@@ -19,17 +20,9 @@ public:
     NotGate(std::string n);
 
     /**
-     * Überschriebene Methode: Warnt vor setInputB()
-     * Das NOT-Gatter hat nur einen Eingang!
-     */
-    void setInputB(int val) override;
-
-    /**
      * Berechnet das invertierte Ausgangssignal
-     * output = NOT inA
-     * @return true wenn input 0 ist, false wenn input 1 ist
      */
-    bool evaluate() override;
+    void evaluate() override;
 
     /**
      * Gibt den aktuellen Zustand des Gatters aus

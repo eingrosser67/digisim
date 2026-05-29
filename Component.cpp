@@ -1,55 +1,40 @@
 #include "Component.h"
 
 /**
- * Konstruktor der Component-Klasse
+ * Konstruktor der Gate-Klasse
  * Initialisiert alle Attribute sicher
  */
-Component::Component(std::string n) 
-    : name(n), inA(false), inB(false), output(false) {
-    std::cout << "[" << name << "] Komponente erstellt" << std::endl;
+Gate::Gate(std::string n) 
+    : m_name(n), m_output(false) {
+    std::cout << "[" << m_name << "] Gate erstellt" << std::endl;
 }
 
 /**
- * Setter für Eingang A
- * Prüft, dass nur gültige Werte (0 oder 1) gesetzt werden
+ * Verbindet einen Eingang mit einem anderen Gatter (Kabel-Plugin)
+ * Hardware-Schutzschaltung (Out-of-Bounds Check)
  */
-void Component::setInputA(int val) {
-    if (val == 0) {
-        inA = false;
-    } else if (val == 1) {
-        inA = true;
+void Gate::connectInput(int index, std::shared_ptr<Gate> source) {
+    // Prüfen, ob der Pin physisch am Gatter existiert
+    if (index >= 0 && index < static_cast<int>(m_inputs.size())) {
+        m_inputs[index] = source;
+        std::cout << "[VERKABELUNG] " << m_name << " Pin " << index 
+                  << " verbunden mit " << source->m_name << std::endl;
     } else {
-        std::cerr << "[" << name << " FEHLER] Ungültiger Wert für Eingang A: " << val 
-                  << " (erwartet 0 oder 1)" << std::endl;
-    }
-}
-
-/**
- * Setter für Eingang B
- * Prüft, dass nur gültige Werte (0 oder 1) gesetzt werden
- * Kann in abgeleiteten Klassen (z.B. NotGate) überschrieben werden
- */
-void Component::setInputB(int val) {
-    if (val == 0) {
-        inB = false;
-    } else if (val == 1) {
-        inB = true;
-    } else {
-        std::cerr << "[" << name << " FEHLER] Ungültiger Wert für Eingang B: " << val 
-                  << " (erwartet 0 oder 1)" << std::endl;
+        std::cerr << "[FEHLER] " << m_name << ": Pin " << index << " existiert nicht! "
+                  << "(Verfügbar: 0-" << (m_inputs.size() - 1) << ")" << std::endl;
     }
 }
 
 /**
  * Getter für den Ausgangswert
  */
-bool Component::getOutput() const {
-    return output;
+bool Gate::getOutput() const {
+    return m_output;
 }
 
 /**
  * Virtueller Destruktor: Wird aufgerufen wenn Objekt zerstört wird
  */
-Component::~Component() {
-    std::cout << "Zerstöre Bauteil: " << name << std::endl;
+Gate::~Gate() {
+    std::cout << "[DESTRUKTOR] Zerstöre Gate: " << m_name << std::endl;
 }

@@ -3,59 +3,37 @@
 
 /**
  * Konstruktor des NandGate
- * Erstellt interne AndGate- und NotGate-Instanzen mit aussagekräftigen Namen
+ * Initialisiert die Pins (genau 2 Eingänge)
+ */
+NandGate::NandGate(std::string n) : Gate(n) {
+    m_inputs.resize(2);  // NAND-Gatter hat exakt 2 Eingangs-Pins
+    std::cout << "[" << m_name << "] NAND-Gatter aktiviert (2 Pins)" << std::endl;
+}
+
+/**
+ * Berechnet die NAND-Logik über Smart Pointers (Pull-Prinzip)
+ * NAND = NOT(AND) = !(A && B)
  * 
- * Wichtig: Wir rufen auch den Konstruktor der Basisklasse auf
+ * Floating Pin Check: Sind beide Kabel eingesteckt?
  */
-NandGate::NandGate(std::string n) 
-    : Component(n), andGate(n + "-AND"), notGate(n + "-NOT") {
-    std::cout << "[" << name << "] NAND-Gatter aktiviert (Komposition: AND + NOT)" << std::endl;
+void NandGate::evaluate() {
+    if (m_inputs[0] && m_inputs[1]) {
+        bool valA = m_inputs[0]->getOutput();
+        bool valB = m_inputs[1]->getOutput();
+        m_output = !(valA && valB);
+    } else {
+        std::cerr << "[WARNUNG] " << m_name << ": NAND-Gatter hat unverbundene Pins (Floating)!" << std::endl;
+        m_output = false;
+    }
 }
 
 /**
- * Setzt Eingang A - weitergeleitet an das interne AND-Gatter
- * Überschreibt die Methode der Basisklasse
- */
-void NandGate::setInputA(int val) {
-    inA = (val != 0);  // Speichere auch im Basisklassen-Attribut
-    andGate.setInputA(val);
-}
-
-/**
- * Setzt Eingang B - weitergeleitet an das interne AND-Gatter
- * Überschreibt die Methode der Basisklasse
- */
-void NandGate::setInputB(int val) {
-    inB = (val != 0);  // Speichere auch im Basisklassen-Attribut
-    andGate.setInputB(val);
-}
-
-/**
- * evaluate(): Der polymorphe Kern
- * 
- * Berechnet NAND = NOT(AND):
- * 1. AND-Gatter mit beiden Eingängen berechnen (evaluate)
- * 2. Ergebnis des AND an das NOT-Gatter weitergeben
- * 3. NOT-Gatter evaluieren
- */
-bool NandGate::evaluate() {
-    // Evaluiere das interne AND-Gatter
-    bool andResult = andGate.evaluate();
-    
-    // Weitergabe des Ergebnisses an das NOT-Gatter
-    notGate.setInputA(andResult ? 1 : 0);
-    
-    // Evaluiere das NOT-Gatter und speichere das Ergebnis
-    output = notGate.evaluate();
-    
-    return output;
-}
-
-/**
- * printState(): Gibt den kompletten Zustand des NAND-Gatters aus
+ * Gibt den Zustand dieses NAND-Gatters aus
  */
 void NandGate::printState() const {
-    std::cout << "NandGate [" << name << ": A=" << (inA ? 1 : 0) 
-              << ", B=" << (inB ? 1 : 0) 
-              << "] => Output=" << (output ? 1 : 0) << std::endl;
+    std::string pinA = (m_inputs[0]) ? "verbunden" : "FLOATING";
+    std::string pinB = (m_inputs[1]) ? "verbunden" : "FLOATING";
+    std::cout << "NandGate [" << m_name << ": A=" << pinA 
+              << ", B=" << pinB 
+              << "] => Output=" << (m_output ? 1 : 0) << std::endl;
 }

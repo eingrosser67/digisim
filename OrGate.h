@@ -3,26 +3,26 @@
 #include "Component.h"
 
 /**
- * OR-Gatter Klasse (erbt von Component)
+ * OR-Gatter Klasse (erbt von Gate)
  * Ausgabe ist 1, wenn mindestens ein Eingang 1 ist
  * 
- * Durch die Vererbung erhalten wir automatisch:
- * - Attribute: name, inA, inB, output (protected)
- * - Methoden: setInputA(), setInputB(), getOutput()
+ * Merkmale (Labor 7):
+ * - Hat genau 2 Eingangs-Pins
+ * - Zieht sich Werte über m_inputs[] (Pull-Prinzip)
+ * - Prüft auf nullptr (Floating-Pin-Check)
  */
-class OrGate : public Component {
+class OrGate : public Gate {
 public:
     /**
-     * Konstruktor: Nimmt einen Namen entgegen und leitet ihn an die Basisklasse weiter
+     * Konstruktor: Nimmt einen Namen entgegen
      * @param n Der Name dieses OR-Gatters
      */
     OrGate(std::string n);
 
     /**
-     * Berechnet das Ausgangssignal (OR-Logik: mindestens ein Eingang muss 1 sein)
-     * @return true wenn mindestens ein Eingang 1 ist, sonst false
+     * Berechnet das Ausgangssignal (OR-Logik über Smart Pointers)
      */
-    bool evaluate() override;
+    void evaluate() override;
 
     /**
      * Gibt den aktuellen Zustand des Gatters aus
