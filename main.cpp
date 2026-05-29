@@ -3,6 +3,8 @@
 #include <memory>
 #include "Component.h"
 #include "AndGate.h"
+#include "DFlipFlop.h"
+#include "NotGate.h"
 #include "OrGate.h"
 #include "XorGate.h"
 #include "Switch.h"
@@ -54,16 +56,34 @@ int main()
     auto finalSumXor = xor2;    // finaler Sum-Ausgang
     auto finalCarryOr = orGate; // finaler Carry-Ausgang
 
-    // Netzwerkliste: Alle Gatter sammeln, damit wir sie vor jedem Test zurücksetzen können
-    std::vector<std::shared_ptr<Gate>> network;
-    network.push_back(swA);
-    network.push_back(swB);
-    network.push_back(swCin);
-    network.push_back(xor1);
-    network.push_back(and1);
-    network.push_back(xor2);
-    network.push_back(and2);
-    network.push_back(orGate);
+    // D-Flip-Flop: speichert den CarryOut über Taktzyklen
+    auto storeCarry = std::make_shared<DFlipFlop>("DFF (CarryStore)");
+    storeCarry->connectInput(0, finalCarryOr);
+
+    // 1-Bit Zähler mit Ringverkabelung
+    auto ringNot = std::make_shared<NotGate>("NOT (Ring)");
+    auto ringFlipFlop = std::make_shared<DFlipFlop>("DFF (Ring)");
+    ringNot->connectInput(0, ringFlipFlop);
+    ringFlipFlop->connectInput(0, ringNot);
+
+    // Alle Gatter fürs Reset sammeln
+    std::vector<std::shared_ptr<Gate>> allGates;
+    allGates.push_back(swA);
+    allGates.push_back(swB);
+    allGates.push_back(swCin);
+    allGates.push_back(xor1);
+    allGates.push_back(and1);
+    allGates.push_back(xor2);
+    allGates.push_back(and2);
+    allGates.push_back(orGate);
+    allGates.push_back(storeCarry);
+    allGates.push_back(ringNot);
+    allGates.push_back(ringFlipFlop);
+
+    // Alle Flip-Flops fürs Taktsignal sammeln
+    std::vector<std::shared_ptr<DFlipFlop>> allFlipFlops;
+    allFlipFlops.push_back(storeCarry);
+    allFlipFlops.push_back(ringFlipFlop);
 
     std::cout << "\n[SCHRITT 2] Schaltkreis verkabeln (DAG-Aufbau)...\n"
               << std::endl;
@@ -106,7 +126,7 @@ int main()
     for (auto [a, b, cin] : testCases)
     {
         // 1. Alle Caches / Vorberechnungen zurücksetzen
-        for (auto &g : network)
+        for (auto &g : allGates)
             g->reset();
 
         // 2. Schalter neu setzen
@@ -136,6 +156,54 @@ int main()
     }
 
     std::cout << "└─────┴─────┴─────────┴─────────┘" << std::endl;
+
+    std::cout << "\n[PHASE 2] 2-Phasen-Schleife mit D-Flip-Flop:\n"
+              << std::endl;
+    std::vector<std::tuple<bool, bool, bool>> cycleSteps = {
+        {false, false, false},
+        {false, false, true},
+        {false, true, false},
+        {false, true, true},
+        {true, false, false},
+        {true, false, true},
+        {true, true, false},
+        {true, true, true},
+        {false, true, false},
+        {true, false, true}};
+
+    for (int cycle = 0; cycle < 10; ++cycle)
+    {
+        auto [a, b, cin] = cycleSteps[cycle];
+
+        // A: Amnesie - alle Caches leeren
+        for (auto &g : allGates)
+            g->reset();
+
+        // B: Lese-Phase - Kombinatorik evaluieren, bevor das Flip-Flop geschrieben wird
+        swA->setState(a);
+        swB->setState(b);
+        swCin->setState(cin);
+        finalCarryOr->evaluate();
+        ringNot->evaluate();
+
+        // D-Flip-Flop-Ausgange repräsentieren den gespeicherten Zustand aus der letzten Taktflanke
+        storeCarry->evaluate();
+        bool storedCarry = storeCarry->getOutput();
+        ringFlipFlop->evaluate();
+        bool ringState = ringFlipFlop->getOutput();
+
+        // C: Ausgabe
+        std::cout << "Cycle " << cycle << ": A=" << (a ? 1 : 0)
+                  << " B=" << (b ? 1 : 0)
+                  << " Cin=" << (cin ? 1 : 0)
+                  << " | StoredCarry=" << (storedCarry ? 1 : 0)
+                  << " | Ring=" << (ringState ? 1 : 0)
+                  << std::endl;
+
+        // D: Schreib-Phase - Flip-Flops speichern den stabilen Signalwert
+        for (auto &ff : allFlipFlops)
+            ff->onClockTick();
+    }
 
     std::cout << "\n[SCHRITT 4] Zustandsbericht der Komponenten:\n"
               << std::endl;
