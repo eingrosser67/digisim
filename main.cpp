@@ -4,153 +4,164 @@
 #include "Component.h"
 #include "AndGate.h"
 #include "OrGate.h"
-#include "NotGate.h"
 #include "XorGate.h"
-#include "NandGate.h"
 #include "Switch.h"
 
 /**
  * =====================================================================
  * Labor 7: Schaltkreisaufbau mit Smart Pointers (DAG-Architektur)
  * =====================================================================
- * 
- * Diese Demonstration zeigt:
- * 1. Den Aufbau eines echten digitalen Schaltkreises
- * 2. Die Verbindung von Gattern über Smart Pointers (Kupferkabel)
- * 3. Die Simulation eines Halbaddierers (Half Adder)
- * 4. Das "Pull-Prinzip" für Werteabfrage
- * 
- * Ein Halbaddierer:
- * - Nimmt zwei Ein-Bit-Eingänge (A, B)
- * - Produziert zwei Ausgänge: Summe (S) und Carry (C)
- * - S = A XOR B
- * - C = A AND B
+ *
+ * Diese Demonstration zeigt den Aufbau eines Volladdierers (Full Adder):
+ * - Drei Eingangsbits: A, B, CarryIn
+ * - Zwei Halbaddierer (jeweils XOR/AND)
+ * - Ein OR-Gatter zur Ermittlung von CarryOut
+ *
+ * Volladdierer-Logik:
+ *  HA1: Sum1 = A XOR B, Carry1 = A AND B
+ *  HA2: Sum = Sum1 XOR CarryIn, Carry2 = Sum1 AND CarryIn
+ *  CarryOut = Carry1 OR Carry2
  */
 
-int main() {
+int main()
+{
     std::cout << "========================================" << std::endl;
     std::cout << "  C++ Digital Simulator - Labor 7" << std::endl;
-    std::cout << "  Halbaddierer (Half Adder) Schaltkreis" << std::endl;
-    std::cout << "========================================\n" << std::endl;
+    std::cout << "  Volladdierer (Full Adder) Schaltkreis" << std::endl;
+    std::cout << "========================================\n"
+              << std::endl;
 
-    // =====================================================================
-    // Phase 4: Halbaddierer montieren
-    // =====================================================================
-    
-    std::cout << "[SCHRITT 1] Komponenten instanziieren (als Smart Pointers)...\n" << std::endl;
-    
+    std::cout << "[SCHRITT 1] Komponenten instanziieren (als Smart Pointers)...\n"
+              << std::endl;
+
     // Datenquellen (Schalter)
     auto swA = std::make_shared<Switch>("Input A");
     auto swB = std::make_shared<Switch>("Input B");
-    
-    // Logikgatter
-    auto xorGate = std::make_shared<XorGate>("XOR (Summe)");
-    auto andGate = std::make_shared<AndGate>("AND (Carry)");
-    
-    std::cout << "\n[SCHRITT 2] Schaltkreis verkabeln (DAG-Aufbau)...\n" << std::endl;
-    
-    // Verkabelung (Fan-Out!): Beide Schalter gehen an beide Gatter
-    // ┌─────────────┐
-    // │  Input A ──┬──> XOR
-    // └─────────────┤
-    //              └──> AND
-    //
-    // ┌─────────────┐
-    // │  Input B ──┬──> XOR
-    // └─────────────┤
-    //              └──> AND
-    
-    xorGate->connectInput(0, swA);    // XOR Pin 0 = Input A
-    xorGate->connectInput(1, swB);    // XOR Pin 1 = Input B
-    
-    andGate->connectInput(0, swA);    // AND Pin 0 = Input A
-    andGate->connectInput(1, swB);    // AND Pin 1 = Input B
-    
-    std::cout << "\n[SCHRITT 3] Wahrheitstabelle: Alle 4 Kombinationen testen...\n" << std::endl;
-    std::cout << "┌─────┬─────┬────────┬───────┐" << std::endl;
-    std::cout << "│  A  │  B  │ Summe  │ Carry │" << std::endl;
-    std::cout << "├─────┼─────┼────────┼───────┤" << std::endl;
-    
-    // Test-Kombinationen: 0+0, 0+1, 1+0, 1+1
-    std::vector<std::pair<bool, bool>> testCases = {
-        {false, false},
-        {false, true},
-        {true, false},
-        {true, true}
-    };
-    
+    auto swCin = std::make_shared<Switch>("Carry In");
+
+    // Halbaddierer 1
+    auto xor1 = std::make_shared<XorGate>("XOR1 (HA1 Summe)");
+    auto and1 = std::make_shared<AndGate>("AND1 (HA1 Carry)");
+
+    // Halbaddierer 2
+    auto xor2 = std::make_shared<XorGate>("XOR2 (HA2 Summe)");
+    auto and2 = std::make_shared<AndGate>("AND2 (HA2 Carry)");
+
+    // Finaler Carry-Out
+    auto orGate = std::make_shared<OrGate>("OR (CarryOut)");
+
+    // Alias-Namen für die finalen Ausgänge (lesbarer 'Root' der DAG)
+    auto finalSumXor = xor2;    // finaler Sum-Ausgang
+    auto finalCarryOr = orGate; // finaler Carry-Ausgang
+
+    // Netzwerkliste: Alle Gatter sammeln, damit wir sie vor jedem Test zurücksetzen können
+    std::vector<std::shared_ptr<Gate>> network;
+    network.push_back(swA);
+    network.push_back(swB);
+    network.push_back(swCin);
+    network.push_back(xor1);
+    network.push_back(and1);
+    network.push_back(xor2);
+    network.push_back(and2);
+    network.push_back(orGate);
+
+    std::cout << "\n[SCHRITT 2] Schaltkreis verkabeln (DAG-Aufbau)...\n"
+              << std::endl;
+
+    // Halbaddierer 1: A, B
+    xor1->connectInput(0, swA);
+    xor1->connectInput(1, swB);
+    and1->connectInput(0, swA);
+    and1->connectInput(1, swB);
+
+    // Halbaddierer 2: Sum1, CarryIn
+    xor2->connectInput(0, xor1);
+    xor2->connectInput(1, swCin);
+    and2->connectInput(0, xor1);
+    and2->connectInput(1, swCin);
+
+    // Finaler Carry-Out: Carry1 OR Carry2
+    orGate->connectInput(0, and1);
+    orGate->connectInput(1, and2);
+
+    std::cout << "\n[SCHRITT 3] Wahrheitstabelle: Alle 8 Kombinationen testen...\n"
+              << std::endl;
+    std::cout << "┌─────┬─────┬─────────┬─────────┐" << std::endl;
+    std::cout << "│  A  │  B  │ CarryIn │ CarryOut│" << std::endl;
+    std::cout << "├─────┼─────┼─────────┼─────────┤" << std::endl;
+
+    std::vector<std::tuple<bool, bool, bool>> testCases = {
+        {false, false, false},
+        {false, false, true},
+        {false, true, false},
+        {false, true, true},
+        {true, false, false},
+        {true, false, true},
+        {true, true, false},
+        {true, true, true}};
+
     int testCount = 0;
     int passedCount = 0;
-    
-    for (auto [a, b] : testCases) {
-        // KRITISCH: Erst Schalter setzen, DANN evaluate() aufrufen!
+
+    for (auto [a, b, cin] : testCases)
+    {
+        // 1. Alle Caches / Vorberechnungen zurücksetzen
+        for (auto &g : network)
+            g->reset();
+
+        // 2. Schalter neu setzen
         swA->setState(a);
         swB->setState(b);
-        
-        // Evaluiere die Gatter (Pull-Prinzip: Sie holen sich Werte selbst)
-        xorGate->evaluate();
-        andGate->evaluate();
-        
-        // Lese die Ergebnisse aus
-        bool summe = xorGate->getOutput();
-        bool carry = andGate->getOutput();
-        
-        // Berechne erwartete Werte
-        bool expectedSum = a ^ b;        // XOR
-        bool expectedCarry = a && b;     // AND
-        
-        // Ausgabe der Testzelle
-        std::cout << "│  " << (a ? 1 : 0) << "  │  " << (b ? 1 : 0) << "  │";
-        std::cout << "   " << (summe ? 1 : 0) << "    │";
-        std::cout << "   " << (carry ? 1 : 0) << "   │";
-        
-        // Überprüfe Korrektheit
+        swCin->setState(cin);
+
+        // 3. Einmalige Auswertung an den finalen Ausgängen (Pull-Prinzip)
+        finalSumXor->evaluate();
+        finalCarryOr->evaluate();
+
+        bool sum = finalSumXor->getOutput();
+        bool carryOut = finalCarryOr->getOutput();
+
+        bool expectedSum = (a ^ b) ^ cin;
+        bool expectedCarry = (a && b) || (cin && (a ^ b));
+
+        std::cout << "│  " << (a ? 1 : 0) << "  │  " << (b ? 1 : 0) << "  │   "
+                  << (cin ? 1 : 0) << "    │   " << (carryOut ? 1 : 0)
+                  << "   │" << std::endl;
+
         testCount += 2;
-        if (summe == expectedSum) {
-            std::cout << " ✓";
+        if (sum == expectedSum)
             passedCount++;
-        } else {
-            std::cout << " ✗";
-        }
-        std::cout << " ";
-        if (carry == expectedCarry) {
-            std::cout << "✓ " << std::endl;
+        if (carryOut == expectedCarry)
             passedCount++;
-        } else {
-            std::cout << "✗ " << std::endl;
-        }
     }
-    
-    std::cout << "└─────┴─────┴────────┴───────┘" << std::endl;
-    
-    std::cout << "\n[SCHRITT 4] Zustandsbericht der Komponenten:\n" << std::endl;
-    
+
+    std::cout << "└─────┴─────┴─────────┴─────────┘" << std::endl;
+
+    std::cout << "\n[SCHRITT 4] Zustandsbericht der Komponenten:\n"
+              << std::endl;
+
     swA->printState();
     swB->printState();
-    xorGate->printState();
-    andGate->printState();
-    
-    // =====================================================================
-    // Abschluss und Exit-Code
-    // =====================================================================
+    swCin->printState();
+    xor1->printState();
+    and1->printState();
+    xor2->printState();
+    and2->printState();
+    orGate->printState();
+
     std::cout << "\n========================================" << std::endl;
     std::cout << "Test Summary:" << std::endl;
     std::cout << "Bestanden: " << passedCount << " / " << testCount << std::endl;
     std::cout << "========================================" << std::endl;
 
-    if (passedCount == testCount) {
-        std::cout << "\n[SUCCESS] Halbaddierer funktioniert korrekt! ✓" << std::endl;
-        std::cout << "Der DAG wurde erfolgreich aufgebaut und evaluiert." << std::endl;
-        return 0;  // ← EXIT-CODE 0: ERFOLG (Grüner Haken für CI)
-    } else {
+    if (passedCount == testCount)
+    {
+        std::cout << "\n[SUCCESS] Volladdierer funktioniert korrekt! ✓" << std::endl;
+        return 0;
+    }
+    else
+    {
         std::cerr << "\n[FEHLER] Mindestens ein Test fehlgeschlagen!" << std::endl;
-        return 1;  // ← EXIT-CODE 1: FEHLER (Rotes Kreuz für CI)
+        return 1;
     }
 }
-
-
-
-
-
-
-

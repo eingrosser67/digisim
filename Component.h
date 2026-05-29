@@ -7,22 +7,24 @@
 
 /**
  * Gate (Basisklasse) - Abstraktion für alle Logikgatter
- * 
+ *
  * Neue Architektur (Labor 7):
  * - Gatter werden über Smart Pointers (std::shared_ptr) verbunden
  * - Ein Vektor m_inputs speichert alle Eingänge (Adjazenzliste / DAG)
  * - Jedes Gatter kennt die Anzahl seiner benötigten Eingänge
  * - evaluate() zieht sich Werte aktiv über die Pointer (Pull-Prinzip)
- * 
+ *
  * Alle spezifischen Gatter (AndGate, OrGate, NotGate, etc.) erben von dieser Klasse
  * und müssen die reine virtuelle Methode evaluate() implementieren.
  */
-class Gate {
+class Gate
+{
 protected:
     // Geschützte Attribute
     std::string m_name;
     bool m_output;
-    std::vector<std::shared_ptr<Gate>> m_inputs;  // ← Die "Kupferkabel"
+    std::vector<std::shared_ptr<Gate>> m_inputs; // ← Die "Kupferkabel"
+    bool m_isCalculated = false;                 // Unser Cache-Flag
 
 public:
     /**
@@ -61,4 +63,9 @@ public:
      * Virtueller Destruktor: Sichert korrekte Cleanup-Reihenfolge bei Polymorphismus
      */
     virtual ~Gate();
+
+    virtual void reset() // Reset-Methode, um den Cache-Status zurückzusetzen (für erneute Berechnungen)
+    {
+        m_isCalculated = false;
+    }
 };
