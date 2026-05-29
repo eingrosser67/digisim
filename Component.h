@@ -26,7 +26,6 @@ protected:
     
     // ===== Labor 9: Memoization & Zyklus-Schutz =====
     bool m_isCalculated = false;  // Cache-Flag: "Wurde ich schon berechnet?"
-    bool m_isVisiting = false;    // Zyklus-Flag: "Bin ich gerade in der Berechnung?"
 
 public:
     /**
@@ -62,7 +61,6 @@ public:
      */
     virtual void reset() {
         m_isCalculated = false;
-        m_isVisiting = false;
     }
 
     /**
