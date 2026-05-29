@@ -23,6 +23,10 @@ protected:
     std::string m_name;
     bool m_output;
     std::vector<std::shared_ptr<Gate>> m_inputs;  // ← Die "Kupferkabel"
+    
+    // ===== Labor 9: Memoization & Zyklus-Schutz =====
+    bool m_isCalculated = false;  // Cache-Flag: "Wurde ich schon berechnet?"
+    bool m_isVisiting = false;    // Zyklus-Flag: "Bin ich gerade in der Berechnung?"
 
 public:
     /**
@@ -48,9 +52,18 @@ public:
     /**
      * Rein virtuelle Methode: evaluate()
      * Berechnet den Ausgang basierend auf den verbundenen Eingängen (Pull-Prinzip)
-     * Diese Methode MUSS von jeder abgeleiteten Klasse implementiert werden.
+     * Diese Methode MUSS von jeder abgeleiteten Klasse implementieren.
      */
     virtual void evaluate() = 0;
+
+    /**
+     * Löscht den Cache (Phase 4: Memoization)
+     * Wird vor jedem neuen Testfall aufgerufen, damit nicht alte Werte gecacht werden
+     */
+    virtual void reset() {
+        m_isCalculated = false;
+        m_isVisiting = false;
+    }
 
     /**
      * Gibt den aktuellen Zustand des Gatters aus

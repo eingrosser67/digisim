@@ -9,7 +9,7 @@
  * Die LogicEngine ist der Kern unseres Simulators.
  * Sie verwaltet eine Liste von Komponenten polymorphisch.
  * 
- * Das Schlüsselkonzept: Wir speichern Zeiger auf die Basisklasse Component,
+ * Das Schlüsselkonzept: Wir speichern Zeiger auf die Basisklasse Gate,
  * aber die Engine "weiß" nicht, welcher konkrete Typ verborgen ist.
  * Durch polymorphe Aufrufe werden die richtigen Gatter-Logiken ausgeführt!
  */
@@ -17,7 +17,7 @@ class LogicEngine {
 private:
     std::string circuitName;
     int tickCount;
-    std::vector<std::unique_ptr<Component>> circuit;  // Smart Pointers verwalten Speicher
+    std::vector<std::unique_ptr<Gate>> circuit;  // Smart Pointers verwalten Speicher
 
 public:
     // Konstruktor: Initialisiert die Engine
@@ -30,7 +30,7 @@ public:
     void setCircuitName(std::string name);
 
     // Fügt eine Komponente polymorphisch zur Schaltung hinzu (übernimmt Ownership)
-    void addComponent(std::unique_ptr<Component> comp);
+    void addComponent(std::unique_ptr<Gate> comp);
 
     // =====================================================================
     // ZUSATZAUFGABE 2: Speichermanagement optimieren

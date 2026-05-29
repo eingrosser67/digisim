@@ -11,18 +11,30 @@ NotGate::NotGate(std::string n) : Gate(n) {
 }
 
 /**
- * Berechnet die NOT-Logik über Smart Pointers (Pull-Prinzip)
+ * Berechnet die NOT-Logik über Smart Pointers (Pull-Prinzip) mit DFS
  * 
- * Floating Pin Check: Ist das Kabel eingesteckt?
+ * Phase 2 (Labor 9): Post-Order DFS Traversal
+ * Phase 4 (Labor 9): Memoization (Cache-Flag)
  */
 void NotGate::evaluate() {
-    if (m_inputs[0]) {
-        bool val = m_inputs[0]->getOutput();
-        m_output = !val;
-    } else {
-        std::cerr << "[WARNUNG] " << m_name << ": NOT-Gatter hat unverbundenen Pin (Floating)!" << std::endl;
-        m_output = false;
+    // ===== Phase 4: Cache-Abfrage =====
+    if (m_isCalculated) {
+        return;  // Cache Hit!
     }
+    
+    // ===== Phase 2, Schritt A: DFS - Vorgänger evaluieren =====
+    if (m_inputs[0] != nullptr) {
+        m_inputs[0]->evaluate();
+    }
+    
+    // ===== Phase 2, Schritt B: Wert auslesen =====
+    bool val = (m_inputs[0] != nullptr) ? m_inputs[0]->getOutput() : false;
+    
+    // ===== Phase 2, Schritt C: Logik anwenden =====
+    m_output = !val;
+    
+    // ===== Phase 4: Cache-Flag setzen =====
+    m_isCalculated = true;
 }
 
 /**

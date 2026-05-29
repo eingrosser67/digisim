@@ -11,22 +11,40 @@ AndGate::AndGate(std::string n) : Gate(n) {
 }
 
 /**
- * Berechnet die AND-Logik über Smart Pointers (Pull-Prinzip)
+ * Berechnet die AND-Logik über Smart Pointers (Pull-Prinzip) mit DFS
  * 
- * Floating Pin Check: Sind beide Kabel eingesteckt?
- * - Wenn ja: hole die Werte von den Quell-Gattern ab
- * - Wenn nein: Warnung + Fallback auf false (sicherer Zustand)
+ * Phase 2 (Labor 9): Post-Order DFS Traversal
+ * - Schritt A: Rekursive evaluate() auf allen Inputs aufrufen
+ * - Schritt B: Werte via getOutput() auslesen
+ * - Schritt C: Eigene Logik berechnen
+ * 
+ * Phase 4 (Labor 9): Memoization (Cache-Flag)
+ * - Cache-Hit sofort zurückkehren (Zeitoptimierung)
+ * - Cache-Flag am Ende setzen (Speichern des Ergebnisses)
  */
 void AndGate::evaluate() {
-    // Floating Pin Check: Sind beide Kabel eingesteckt?
-    if (m_inputs[0] && m_inputs[1]) {
-        bool valA = m_inputs[0]->getOutput();
-        bool valB = m_inputs[1]->getOutput();
-        m_output = valA && valB;
-    } else {
-        std::cerr << "[WARNUNG] " << m_name << ": AND-Gatter hat unverbundene Pins (Floating)!" << std::endl;
-        m_output = false;  // Fallback-Zustand
+    // ===== Phase 4: Cache-Abfrage (sofort zurück, wenn schon berechnet) =====
+    if (m_isCalculated) {
+        return;  // Cache Hit! Keine redundante Berechnung
     }
+    
+    // ===== Phase 2, Schritt A: DFS - Vorgänger zwingen, sich zu berechnen =====
+    if (m_inputs[0] != nullptr) {
+        m_inputs[0]->evaluate();
+    }
+    if (m_inputs[1] != nullptr) {
+        m_inputs[1]->evaluate();
+    }
+    
+    // ===== Phase 2, Schritt B: Werte mit Fallback (Floating-Pin-Check) =====
+    bool valA = (m_inputs[0] != nullptr) ? m_inputs[0]->getOutput() : false;
+    bool valB = (m_inputs[1] != nullptr) ? m_inputs[1]->getOutput() : false;
+    
+    // ===== Phase 2, Schritt C: Eigene Logik anwenden =====
+    m_output = valA && valB;
+    
+    // ===== Phase 4: Cache-Flag setzen (Gedächtnis versiegeln) =====
+    m_isCalculated = true;
 }
 
 /**

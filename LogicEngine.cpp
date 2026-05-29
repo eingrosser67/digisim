@@ -35,7 +35,7 @@ void LogicEngine::setCircuitName(std::string name) {
  * Der unique_ptr wird mit std::move übernommen (Ownership-Transfer)
  * Ab diesem Punkt verwaltet die Engine den Speicher!
  */
-void LogicEngine::addComponent(std::unique_ptr<Component> comp) {
+void LogicEngine::addComponent(std::unique_ptr<Gate> comp) {
     if (comp != nullptr) {
         circuit.push_back(std::move(comp));
         std::cout << "[LogicEngine] Komponente hinzugefügt. Gesamt: " << circuit.size() << std::endl;
@@ -56,8 +56,8 @@ void LogicEngine::doTick() {
     
     for (auto& c : circuit) {
         // Polymorphe Funktion: Der Compiler findet automatisch die richtige evaluate()-Methode!
-        bool result = c->evaluate();
-        std::cout << "  => Ergebnis: " << (result ? "true" : "false") << std::endl;
+        c->evaluate();
+        std::cout << "  => Ausgabe: " << (c->getOutput() ? "true" : "false") << std::endl;
     }
 }
 
